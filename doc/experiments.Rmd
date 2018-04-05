@@ -159,10 +159,10 @@ update_assignment <- function(assignment, prob_class, prob_rating){
   # since we're taking ratios eventually this is still correct.
   prob_rating <- prob_rating/mean(prob_rating)
   for (i in 1:n_users){
+    movies_rated_by_i <- which(!is.na(movies_UI[i,]))
+    ratings_given_by_i <- movies_UI[i,!is.na(movies_UI[i,])]
+    
     for (c in 1:C){
-      movies_rated_by_i <- which(!is.na(movies_UI[i,]))
-      ratings_given_by_i <- movies_UI[i,!is.na(movies_UI[i,])]
-
       numerator <- prob_class[c]
       for (k in 1:length(movies_rated_by_i)){
         numerator <- numerator * prob_rating[c, movies_rated_by_i[[k]], ratings_given_by_i[[k]]]
@@ -292,4 +292,80 @@ for (i in 1:dim(assignment)[1]){
 }
 ```
 
+# Compute likelihood of parameters
+
+```{r}
+# TODO
+```
+
+
+# Do predictions:
+
+Now that we have approximated all parameters, we can do predictions.
+
+```{r}
+movie_test <- read.csv("../data/eachmovie_sample/data_test.csv", as.is = TRUE, header = TRUE)
+MS_test <- read.csv("../data/MS_sample/data_test.csv", as.is = TRUE, header = TRUE)
+```
+
+```{r}
+system.time(MS_UI_test <- MS_data_transform(MS_test))
+system.time(movies_UI_test <- movie_data_transform(movie_test))
+
+save(MS_UI_test, file = "../data/ms_UI_test.RData")
+save(movies_UI_test, file = "../data/movies_UI_test.RData")
+```
+
+To estimate ratings, we first compute assignments of the new users to clusters, with the parameters we learned.
+We then compute the probability of giving each rating using the soft assignments
+And then compute the expectation of the rating given the probabilities we just computed.
+
+Note that once we optimize the rest of the code (by using matrix operations as often as possible) we can also optimize the prediction part.
+
+```{r}
+estimate_rating <- function(i, j, prob_class, prob_rating, movies_UI){
+  # estimate rating of user i for item j, given learned parameters
+  # in general, movies_UI will actually be movies_UI_test
+  movies_rated_by_i <- which(!is.na(movies_UI[i,]))
+  ratings_given_by_i <- movies_UI[i,!is.na(movies_UI[i,])]
+  
+  # Step 1: compute assignment of user i
+  assignment <- matrix(0, nrow=3)
+  for (c in 1:C){
+    numerator <- prob_class[c]
+    for (k in 1:length(movies_rated_by_i)){
+      numerator <- numerator * prob_rating[c, movies_rated_by_i[[k]], ratings_given_by_i[[k]]]
+    }
+    denominator <- 0
+    for (l in 1:C){
+      prod <- prob_class[l]
+      for (k in 1:length(movies_rated_by_i)){
+        prod <- prod * prob_rating[l, movies_rated_by_i[[k]], ratings_given_by_i[[k]]]
+      }
+      denominator <- denominator + prod
+    }
+    assignment[c] <- numerator/denominator
+  }
+
+  # Step 2: compute probabilities for each rating
+  probs <- matrix(0, nrow=6)
+  for (k in 1:6){
+    for (c in 1:C){
+      probs[k] = probs[k] + assignment[c] * prob_rating[c, j, k]
+    }
+  }
+
+  # Step 3: compute expectation
+  expected_rating <- 0
+  for (k in 1:6){
+    expected_rating <- expected_rating + k*probs[k]
+  }
+  
+  return(expected_rating)
+}
+```
+
+```{r}
+estimate_rating(1, 1, prob_class, prob_rating, movies_UI_test)
+```
 
