@@ -243,28 +243,44 @@ assignment <- update_assignment(assignment, prob_class, prob_rating)
 
 
 ```{r}
-em <- function(steps){
-  # TODO: add checking of convergence
+em <- function(epsilon, max_steps=100){
+  step <- 0
   prob_class <- matrix(1/C, nrow=C)
   prob_rating <- array(1/6, dim=c(C, n_items, 6))
   assignment <- matrix(NA, nrow=n_users, ncol=C)
 
-  for (i in 1:steps){
+  while (TRUE){
+    step <- step + 1
     # E:
-    assignment <- update_assignment(assignment, prob_class, prob_rating)
+    new_assignment <- update_assignment(assignment, prob_class, prob_rating)
 
     # M:
-    prob_class <- update_prob_class(prob_class, assignment)
-    prob_rating <- update_prob_rating(prob_rating, assignment)
+    new_prob_class <- update_prob_class(prob_class, new_assignment)
+    new_prob_rating <- update_prob_rating(prob_rating, new_assignment)
+    
+    if ((step > 1) & (norm(new_prob_class - prob_class) < epsilon)){
+      # convergence: we check if prob_class and prob_rating converge
+      # TODO: maybe checking for convergence of likelihood would be better ?
+      print(paste0('converged in ', step, ' steps.'))
+      return(list(assignment, prob_class, prob_rating))
+    } else if (step > max_steps){
+      print('reached max number of steps without converging, returning...')
+      return(list(assignment, prob_class, prob_rating))
+    }
+    
+    assignment <- new_assignment
+    prob_class <- new_prob_class
+    prob_rating <- new_prob_rating
   }
-  return(list(assignment, prob_class, prob_rating))
 }
 
-system.time(result <- em(200)) # 500 sec ~ 8 min
+system.time(result <- em(0.001))
 
 assignment <- result[[1]]
 prob_class <- result[[2]]
 prob_rating <- result[[3]]
+
+norm(prob_class)
 ```
 
 
