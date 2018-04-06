@@ -118,6 +118,9 @@ calc_weight <- function(data, method) {
       if (method == 'spearman') {
         return(cor(rowA[joint_values], rowB[joint_values], method = 'spearman'))
       }
+      if (method == 'mean_squared_diff') {
+        return(1/(1+sum((rowA[joint_values]-rowB[joint_values])^2)/length(rowA[joint_values])))
+      }
     }
   }
   

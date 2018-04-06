@@ -207,6 +207,8 @@ long.way <- function(row.num) {
 system.time(long.way(1))
 ```
 
+### Pearson correlation similarity
+
 ```{r}
 # Calculate the full weights on the movie data
 # The below took 87 minutes on my Macbook, 35 on my iMac
@@ -231,6 +233,8 @@ save(MS_sim_pearson, file = "MS_sim_pearson.RData")
 MS_sim_pearson[1:10,1:10]
 ```
 
+### Spearman correlation similarity
+
 ```{r}
 movie_sim_spearman <- calc_weight(movie_UI,method="spearman")
 save(movie_sim_spearman, file = "movie_sim_spearman.RData")
@@ -249,6 +253,25 @@ save(MS_sim_spearman, file = "MS_sim_spearman.RData")
 MS_sim_spearman[1:10,1:10]
 ```
 
+### Mean Squared Difference Similarity
+
+```{r}
+movie_sim_msd <- calc_weight(movie_UI,method="mean_squared_diff")
+save(movie_sim_msd, file = "movie_sim_msd.RData")
+```
+
+```{r}
+movie_sim_msd[1:10,1:10]
+```
+
+```{r}
+MS_sim_msd <- calc_weight(MS_UI,method="mean_squared_diff")
+save(MS_sim_msd, file = "MS_sim_msd.RData")
+```
+
+```{r}
+MS_sim_msd[1:10,1:10]
+```
 
 ## Calculating the Predictions for the Users
 
