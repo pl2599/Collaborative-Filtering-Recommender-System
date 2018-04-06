@@ -316,12 +316,12 @@ The test data contains some ratings that were missing for users. We can compare 
 # system.time(MS_UI_test <- MS_data_transform(MS_test))
 # system.time(movies_UI_test <- movie_data_transform(movie_test))
 
-# save(MS_UI_test, file = "../data/ms_UI_test.RData")
+# save(MS_UI_test, file = "../data/MS_UI_test.RData")
 # save(movies_UI_test, file = "../data/movies_UI_test.RData")
 ```
 
 ```{r}
-load("../data/ms_UI_test.RData")
+load("../data/MS_UI_test.RData")
 load("../data/movies_UI_test.RData")
 ```
 
