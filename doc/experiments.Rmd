@@ -332,6 +332,7 @@ estimate_rating <- function(i, j, prob_class, prob_rating, assignment, movies_UI
 estimate_rating(1, 1, prob_class, prob_rating, assignment, movies_UI)
 ```
 
+
 ```{r}
 predict_all <- function(prob_class, prob_rating, assignment, movies_UI){
   # fills in movies_UI matrix and returns full matrix
@@ -349,6 +350,30 @@ predict_all <- function(prob_class, prob_rating, assignment, movies_UI){
 
 ```{r}
 system.time(predicted_UI <- predict_all(prob_class, prob_rating, assignment, movies_UI)) # will take around 8 min ?
+```
+
+```{r}
+estimate_rating_movie <- function(j, prob_class, prob_rating, assignment, movies_UI){
+  # estimate all ratings for movie j at once
+  ratings <- matrix(0, nrow=n_users)
+  for (k in 1:6){
+    ratings <- ratings + k*assignment%*%prob_rating[,j,k]
+  }
+  return(ratings)
+}
+
+predict_all_v2 <- function(prob_class, prob_rating, assignment, movies_UI){
+  for (j in 1:n_items){
+    movies_UI[,j] <- estimate_rating_movie(j, prob_class, prob_rating, assignment, movies_UI)
+  }
+  return(movies_UI)
+}
+```
+
+Since we're using matrix operations, the prediction is much faster (1000 times faster):
+
+```{r}
+system.time(predicted_UI <- predict_all_v2(prob_class, prob_rating, assignment, movies_UI))
 ```
 
 
@@ -369,4 +394,26 @@ save(MS_UI_test, file = "../data/ms_UI_test.RData")
 save(movies_UI_test, file = "../data/movies_UI_test.RData")
 ```
 
+```{r}
+indices_to_predict <- which(!is.na(movies_UI_test))
+```
+WARNING there might be an error because movies_UI_test has less columns than movies_UI, so indices might be messed up.
+
+Mean squared error, mean absolute error:
+
+```{r}
+MSE <- sum((predicted_UI[indices_to_predict] - movies_UI_test[indices_to_predict])**2)/length(movies_UI_test[indices_to_predict])
+MAE <- sum(abs(predicted_UI[indices_to_predict] - movies_UI_test[indices_to_predict]))/length(movies_UI_test[indices_to_predict])
+
+print(MSE)
+print(MAE)
+```
+
+R^2 score (coefficient of determination)
+
+```{r}
+R2 <- 1 - sum((predicted_UI[indices_to_predict] - movies_UI_test[indices_to_predict])**2)/sum((predicted_UI[indices_to_predict] - mean(predicted_UI[indices_to_predict]))**2)
+
+print(R2)
+```
 
