@@ -65,13 +65,19 @@ To choose the number of clusters (which is an input of the EM algorithm), we use
 - *prob_rating* corresponds to the gamma_c_j_k values (prob_rating[class c, movie j, rating k])
 
 **TODO**: Implement Cross Validation to choose C.
-
+**TODO**: EM algorithm should run a few times, compute likelihood of parameters after convergence, and keep the best one.
 ```{r}
-system.time(result <- em(movies_UI, C=10, epsilon=0.001))
+system.time(result <- em(movies_UI, C=10, epsilon=0.001, dataset='movies'))
 
-assignment <- result[[1]]
-prob_class <- result[[2]]
-prob_rating <- result[[3]]
+assignment_movies <- result[[1]]
+prob_class_movies <- result[[2]]
+prob_rating_movies <- result[[3]]
+
+system.time(result <- em(MS_UI, C=10, epsilon=0.001, dataset='MS'))
+
+assignment_MS <- result[[1]]
+prob_class_MS <- result[[2]]
+prob_rating_MS <- result[[3]]
 ```
 
 ### Step 2: Check results:
@@ -79,24 +85,15 @@ prob_rating <- result[[3]]
 Check if probabilities are correct:
 
 ```{r}
-for (i in 1:dim(assignment)[1]){
-  stopifnot(abs(sum(assignment[i,]) - 1) < 0.001)
-}
-
-stopifnot(abs(sum(prob_class) - 1) < 0.001)
-
-for (c in 1:dim(prob_rating)[1]){
-  for (j in 1:dim(prob_rating)[2]){
-    # stopifnot(abs(sum(prob_rating[c,j,]) - 1) < 0.001)
-    if (abs(sum(prob_rating[c,j,]) - 1) > 0.001){
-      print(c(c,j))
-    }
-  }
-}
-
+em_check(assignment_movies, prob_class_movies, prob_rating_movies)
 # there appears to be an error on one of the rows:
 # TODO check this further
-sum(prob_rating[1,1610,])
+sum(prob_rating_movies[1,1610,])
+which(!is.na(movies_UI[,1610]))
+movies_UI[5006,1610]
+
+
+em_check(assignment_MS, prob_class_MS, prob_rating_MS)
 ```
 
 Compute likelihood of parameters:
@@ -108,7 +105,8 @@ Compute likelihood of parameters:
 ### Step 3: Predict ratings
 
 ```{r}
-system.time(predicted_movies_UI <- predict_all_v2(movies_UI, prob_class, prob_rating, assignment))
+system.time(predicted_movies_UI <- predict_all_v2(movies_UI, prob_class_movies, prob_rating_movies, assignment_movies))
+system.time(predicted_MS_UI <- predict_all_v2(MS_UI, prob_class_MS, prob_rating_MS, assignment_MS, dataset='MS'))
 ```
 
 ### Step 4: Measure performance on test data
