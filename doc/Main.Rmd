@@ -1,0 +1,226 @@
+---
+title: "Main"
+author: "Pak Kin Lai, pl2599"
+date: "4/6/2018"
+output: pdf_document
+---
+
+```{r, warning = FALSE}
+if(!require("lsa")){
+  install.packages("lsa")
+}
+
+if(!require("DescTools")){
+  install.packages("DescTools")
+}
+
+library("lsa")
+library("DescTools")
+```
+
+### Step 0: Specify Directories and Source
+
+```{r wkdir}
+setwd("~/Documents/GitHub/project-3-algorithms-project-3-algorithms-group-3/doc")
+source("../lib/functions.R")
+```
+
+### Step 1: Setup Controls
+
+```{r setup, echo=FALSE}
+buildUI <- F
+buildUI_test <- F
+run_sim_weights <- F
+run_pred <- F
+run_test <- T
+run_pearson <- F
+run_spearman <- F
+run_entropy <- T
+run_vector <- T
+```
+
+### Step 2: Build or Load UIs
+
+```{r}
+if(buildUI)
+{
+  MS_train <- read.csv("../data/MS_sample/data_train.csv", as.is = TRUE, header = TRUE)
+  MS_train <- MS_train[, 2:4]
+  MS_UI <- MS_data_transform(MS_train)
+  save(MS_UI, file = "../output/MS_UI.Rdata")
+  
+  movie_train <- read.csv("../data/eachmovie_sample/data_train.csv", as.is = TRUE, header = TRUE)
+  movie_train <- movie_train[, 2:4]
+  movie_UI <- movie_data_transform(movie_train)
+  save(movie_UI, file = "../output/movie_UI.RData")
+} 
+if(buildUI_test)
+{
+  MS_test <- read.csv("../data/MS_sample/data_test.csv", as.is = TRUE, header = TRUE)
+  MS_test <- MS_test[, 2:4]
+  MS_UI_test <- MS_data_transform(MS_test)
+  save(MS_UI_test, file = "../output/MS_UI_test.Rdata")
+  
+  movie_test <- read.csv("../data/eachmovie_sample/data_test.csv", as.is = TRUE, header = TRUE)
+  movie_test <- movie_test[, 2:4]
+  movie_UI_test <- movie_data_transform(movie_test)
+  save(movie_UI_test, file = "../output/movie_UI_test.RData")
+} 
+
+load("../output/MS_UI.RData")
+load("../output/movie_UI.RData")
+
+```
+
+### Step 3: Build or Load Similarity Matrixes
+
+```{r}
+if(run_sim_weights)
+{
+  if(run_pearson)
+  {
+    MS_sim_pearson <- calc_weight(MS_UI, "pearson")
+    save(MS_sim_pearson, file = "../output/MS_sim_pearson.RData")
+
+    movie_sim_pearson <- calc_weight(movie_UI, "pearson")
+    save(movie_sim_pearson, file = "../output/movie_sim_pearson.RData")
+  }
+  if(run_spearman)
+  {
+    MS_sim_spearman <- calc_weight(MS_UI, "spearman")
+    save(MS_sim_spearman, file = "../output/MS_sim_spearman.RData")
+    
+    movie_sim_spearman <- calc_weight(movie_UI, "spearman")
+    save(movie_sim_spearman, file = "../output/movie_sim_spearman.RData")
+  }
+  if(run_entropy)
+  {
+    MS_sim_entropy <- calc_weight(MS_UI, "entropy")
+    save(MS_sim_entropy, file = "../output/MS_sim_entropy.RData")
+    
+    movie_sim_entropy <- calc_weight(movie_UI, "entropy")
+    save(movie_sim_entropy, file = "../output/movie_sim_entropy.Rdata")
+  }
+  if(run_vector)
+  {
+    MS_sim_vector <- calc_weight(MS_UI)
+    save(MS_sim_vector, file = "../output/MS_sim_vector.RData")
+    
+    movie_sim_vector <- calc_weight(movie_UI, "vector")
+    save(movie_sim_vector, file = "../output/movie_sim_vector.RData")
+  }
+}
+
+```
+
+### Step 4: Calculate the Prediction Matrices
+
+```{r}
+if(run_pred)
+{
+  if(run_pearson)
+  {
+    load("../output/MS_sim_pearson.RData")
+    load("../output/movie_sim_pearson.RData")
+
+    MS_pred_pearson <- pred_matrix(MS_UI, MS_sim_pearson)
+    save(MS_pred_pearson, file = "../output/MS_pred_pearson.RData")
+    
+    movie_pred_pearson <- pred_matrix(movie_UI, movie_sim_pearson)
+    save(movie_pred_pearson, file = "../output/movie_pred_pearson.RData")
+  }
+  if(run_spearman)
+  {
+    load("../output/MS_sim_spearman.RData")
+    load("../output/movie_sim_spearman.RData")
+
+    MS_pred_spearman <- pred_matrix(MS_UI, MS_sim_pearson)
+    save(MS_pred_spearman, file = "../output/MS_pred_spearman.RData")
+    
+    movie_pred_spearman <- pred_matrix(movie_UI, movie_sim_spearman)
+    save(movie_pred_spearman, file = "../output/movie_pred_spearman.RData")
+  }
+  if(run_entropy)
+  {
+    load("../output/MS_sim_entropy.RData")
+    load("../output/movie_sim_entropy.RData")
+
+    MS_pred_entropy <- pred_matrix(MS_UI, MS_sim_entropy)
+    save(MS_pred_entropy, file = "../output/MS_pred_entropy.RData")
+    
+    movie_pred_entropy <- pred_matrix(movie_UI, movie_sim_entropy)
+    save(movie_pred_entropy, file = "../output/movie_pred_entropy.RData")
+  }
+  if(run_vector)
+  {
+    load("../output/MS_sim_vector.RData")
+    load("../output/movie_sim_vector.RData")
+
+    MS_pred_vector <- pred_matrix(MS_UI, MS_sim_vector)
+    save(MS_pred_vector, file = "../output/MS_pred_vector.RData")
+    
+    movie_pred_vector <- pred_matrix(movie_UI, movie_sim_vector)
+    save(movie_pred_vector, file = "../output/movie_pred_vector.RData")
+  }
+}
+```
+
+### Step 5 Check for Accuracy
+
+```{r}
+if(run_test)
+{
+  load("../output/MS_UI_test.RData")
+  load("../output/movie_UI_test.RData")
+  
+  if(run_pearson)
+  {
+    load("../output/MS_pred_pearson.RData")
+    load("../output/movie_pred_pearson.RData")
+    
+    MS_acc_pearson <- test_acc_MS(MS_pred_pearson, MS_UI_test)
+    movie_acc_pearson <- test_acc_movie(movie_pred_pearson, movie_UI_test)
+    
+    cat("Accuracy of MS with Pearson =", MS_acc_pearson, "score \n")
+    cat("Accuracy of movie with Pearson =", movie_acc_pearson, "deviations \n")
+  }
+  if(run_spearman)
+  {
+    load("../output/MS_pred_spearman.RData")
+    load("../output/movie_pred_spearman.RData")
+    
+    MS_acc_spearman <- test_acc_MS(MS_pred_spearman, MS_UI_test)
+    movie_acc_spearman <- test_acc_movie(movie_pred_spearman, movie_UI_test)
+    
+    cat("Accuracy of MS with Spearman =", MS_acc_spearman, "score \n")
+    cat("Accuracy of movie with Spearman =", movie_acc_spearman, "deviations \n")
+  }
+  if(run_entropy)
+  {
+    load("../output/MS_pred_entropy.RData")
+    load("../output/movie_pred_entropy.RData")
+    
+    MS_acc_entropy <- test_acc_MS(MS_pred_entropy, MS_UI_test)
+    movie_acc_entropy <- test_acc_movie(movie_pred_entropy, movie_UI_test)
+    
+    cat("Accuracy of MS with entropy =", MS_acc_entropy, "score \n")
+    cat("Accuracy of movie with entropy =", movie_acc_entropy, "deviations \n")
+  }
+  if(run_vector)
+  {
+    load("../output/MS_pred_vector.RData")
+    load("../output/movie_pred_vector.RData")
+    
+    MS_acc_vector <- test_acc_MS(MS_pred_vector, MS_UI_test)
+    movie_acc_vector <- test_acc_movie(movie_pred_vector, movie_UI_test)
+    
+    cat("Accuracy of MS with vector =", MS_acc_vector, "score \n")
+    cat("Accuracy of movie with vector =", movie_acc_vector, "deviations \n")
+  }
+}
+
+```
+
+
+
+
