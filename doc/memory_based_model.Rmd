@@ -418,3 +418,21 @@ save(movie_pred_msd, file = "movie_pred_msd.RData")
 ```{r}
 movie_pred_msd[1:10,1:10]
 ```
+
+### SimRank
+
+```{r}
+MS_pred_simrank <- pred_matrix(MS_UI, MS_sim_simrank)
+save(MS_pred_simrank, file = "MS_pred_simrank.RData")
+```
+
+```{r}
+MS_pred_simrank[1:10,1:10]
+```
+
+
+
+
+
+
+

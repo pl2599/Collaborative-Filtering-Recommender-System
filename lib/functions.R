@@ -159,7 +159,6 @@ calc_simrank <- function(data) {
     }
     for(i in 1:nrow(data)) {
       weight_mat[i, ] <- apply(data, 1, weight_func, data[i, ])
-      print(i)
     }
     diag(weight_mat) <- 1
     
@@ -169,7 +168,6 @@ calc_simrank <- function(data) {
     }
     for(i in 1:ncol(data)) {
       item_sim[i, ] <- apply(data, 2, sim_func, data[,i])
-      print(i)
     }
     diag(item_sim) <- 1
     print(iter)
