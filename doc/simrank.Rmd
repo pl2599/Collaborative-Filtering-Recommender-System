@@ -1,0 +1,173 @@
+---
+title: "SimRank"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+Load in the matrices.
+
+```{r}
+MS_UI <- get(load("E:/GitHub/project-3-algorithms-project-3-algorithms-group-3/output/MS_UI.RData"))
+movie_UI <- get(load("E:/GitHub/project-3-algorithms-project-3-algorithms-group-3/output/movie_UI.RData"))
+```
+
+Try with MS_UI first. 
+Iteration 0:
+
+```{r}
+weight_mat <- matrix(0, nrow = nrow(MS_UI), ncol = nrow(MS_UI))
+item_sim <- matrix(0,nrow=ncol(MS_UI),ncol=ncol(MS_UI))
+```
+
+```{r}
+dim(weight_mat)
+dim(item_sim)
+```
+
+```{r}
+diag(weight_mat) <- 1
+diag(item_sim) <- 1
+```
+
+```{r}
+MS_UI[MS_UI==0] <- NA
+MS_UI[1:10,1:10]
+```
+
+```{r}
+rowA <- MS_UI[1, ]
+rowB <- MS_UI[2, ]
+```
+
+```{r}
+joint_values <- !is.na(rowA) & !is.na(rowB)
+length(rowA[joint_values])
+```
+
+Iteration 1:
+
+```{r}
+simAB <- 0.8*length(rowA[joint_values])/(sum(rowA,na.rm=T)*sum(rowB,na.rm=T))
+weight_mat[1,2] <- simAB
+```
+
+```{r}
+weight_func <- function(rowA, rowB) {
+  joint_values <- !is.na(rowA) & !is.na(rowB)
+  return(0.8*length(rowA[joint_values])/(sum(rowA,na.rm=T)*sum(rowB,na.rm=T)))
+}
+    
+for(i in 1:nrow(MS_UI)) {
+  weight_mat[i, ] <- apply(MS_UI, 1, weight_func, MS_UI[i, ])
+  print(i)
+}
+```
+
+```{r}
+diag(weight_mat) <- 1
+weight_mat[1:10,1:10]
+```
+
+```{r}
+col1 <- MS_UI[,1]
+col2 <- MS_UI[,2]
+MS_UI[1:20,1:2]
+```
+
+```{r}
+#how many users visited item1 and item2
+sum(col1,na.rm=T)
+sum(col2,na.rm=T)
+```
+
+```{r}
+# use which() to calculate the similarity of users for each item
+sim12 <- 0.8*sum(weight_mat[which(!is.na(col1)),which(!is.na(col2))])/(sum(col1,na.rm=T)*sum(col2,na.rm=T))
+item_sim[1,2] <- sim12
+```
+
+```{r}
+item_sim[1:10,1:10]
+```
+
+```{r}
+dim(weight_mat[which(!is.na(col1)),which(!is.na(col2))])
+```
+
+```{r}
+sim_func <- function(col1, col2) {
+  return(0.8*sum(weight_mat[which(!is.na(col1)),which(!is.na(col2))])/(sum(col1,na.rm=T)*sum(col2,na.rm=T)))
+}
+    
+for(i in 1:ncol(MS_UI)) {
+  item_sim[i, ] <- apply(MS_UI, 2, sim_func, MS_UI[,i])
+  print(i)
+}
+```
+
+```{r}
+diag(item_sim) <- 1
+item_sim[1:10,1:10]
+```
+
+Iteration 2:
+
+```{r}
+head(rowA,20)
+head(rowB,20)
+```
+
+```{r}
+sum(rowA,na.rm=T)
+sum(rowB,na.rm=T)
+```
+
+```{r}
+dim(item_sim[which(!is.na(rowA)),which(!is.na(rowB))])
+sum(item_sim[which(!is.na(rowA)),which(!is.na(rowB))])
+```
+
+```{r}
+weight_func <- function(rowA, rowB) {
+  return(0.8*sum(item_sim[which(!is.na(rowA)),which(!is.na(rowB))])/(sum(rowA,na.rm=T)*sum(rowB,na.rm=T)))
+}
+    
+for(i in 1:nrow(MS_UI)) {
+  weight_mat[i, ] <- apply(MS_UI, 1, weight_func, MS_UI[i, ])
+  print(i)
+}
+```
+
+```{r}
+diag(weight_mat) <- 1
+weight_mat[1:10,1:10]
+```
+
+```{r}
+for (iter in 1:5){
+  print(iter)
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

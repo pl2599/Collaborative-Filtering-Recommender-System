@@ -273,6 +273,27 @@ save(MS_sim_msd, file = "MS_sim_msd.RData")
 MS_sim_msd[1:10,1:10]
 ```
 
+### SimRank Similarity
+
+```{r}
+movie_sim_simrank <- calc_simrank(movie_UI)
+save(movie_sim_simrank, file = "movie_sim_simrank.RData")
+```
+
+```{r}
+movie_sim_simrank[1:10,1:10]
+```
+
+```{r}
+MS_sim_simrank <- calc_simrank(MS_UI)
+save(MS_sim_simrank, file = "MS_sim_simrank.RData")
+```
+
+```{r}
+MS_sim_simrank[1:10,1:10]
+```
+
+
 ## Calculating the Predictions for the Users
 
 ```{r}
@@ -286,7 +307,7 @@ num_cols        <- length(cols_to_predict)
 
 ```{r}
 # Transform the UI matrix into a deviation matrix since we want to calculate weighted averages of the deviations
-neighb_weights <- MS_sim[1, ]
+neighb_weights <- MS_sim_pearson[1, ]
 row_avgs       <- apply(MS_UI, 1, mean, na.rm = TRUE)
 dev_mat        <- MS_UI - matrix(rep(row_avgs, ncol(MS_UI)), ncol = ncol(MS_UI))
 ```
@@ -332,6 +353,8 @@ pred_mat2[1, cols_to_predict] <- row_avgs[1] +  apply(neighb_devs * weight_sub, 
 all(pred_mat2[1,] == pred_mat[1, ])
 ```
 
+### Pearson
+
 ```{r}
 # Calculate predictions for MS
 # This calculation took me 15 minutes
@@ -353,7 +376,45 @@ save(movie_pred_pearson, file = "movie_pred_pearson.RData")
 ```
 
 ```{r}
-movie_pred[1:10,1:10]
+movie_pred_pearson[1:10,1:10]
 ```
 
+### Spearman
 
+```{r}
+MS_pred_spearman <- pred_matrix(MS_UI, MS_sim_spearman)
+save(MS_pred_spearman, file = "MS_pred_spearman.RData")
+```
+
+```{r}
+MS_pred_spearman[1:10,1:10]
+```
+
+```{r}
+movie_pred_spearman <- pred_matrix(movie_UI, movie_sim_spearman)
+save(movie_pred_spearman, file = "movie_pred_spearman.RData")
+```
+
+```{r}
+movie_pred_spearman[1:10,1:10]
+```
+
+### Mean Squared Difference
+
+```{r}
+MS_pred_msd <- pred_matrix(MS_UI, MS_sim_msd)
+save(MS_pred_msd, file = "MS_pred_msd.RData")
+```
+
+```{r}
+MS_pred_msd[1:10,1:10]
+```
+
+```{r}
+movie_pred_msd <- pred_matrix(movie_UI, movie_sim_msd)
+save(movie_pred_msd, file = "movie_pred_msd.RData")
+```
+
+```{r}
+movie_pred_msd[1:10,1:10]
+```
