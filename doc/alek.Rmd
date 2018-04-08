@@ -1,0 +1,268 @@
+
+```{r}
+source("../lib/functions.R")
+
+
+setwd("~/Applied Data Science/project-3-algorithms-project-3-algorithms-group-3-similarity-weight/data/")
+MS_train <- read.csv("./MS_sample/data_train.csv", as.is = TRUE, header = TRUE)
+MS_train <- MS_train[, 2:4]
+
+MS_UI <- MS_data_transform(MS_train)
+save(MS_UI, file = "MS_UI.RData")
+
+dim(MS_UI)
+MS_UI[1:10,1:10]
+
+visit_nums <- rowSums(MS_UI != 0)
+
+table(visit_nums)
+mean(visit_nums)
+median(visit_nums)
+
+long.row.sums <- function(UI) {
+  vec <- rep(NA, nrow(UI))
+  for (i in 1:nrow(UI)) {
+    vec[i] <- sum(UI[i,], na.rm = TRUE)
+  }
+  return(vec)
+}
+
+system.time(long.row.sums(MS_UI))
+system.time(rowSums(MS_UI, na.rm = TRUE))
+
+vec <- long.row.sums(MS_UI)
+all(vec == rowSums(MS_UI, na.rm = TRUE))
+```
+
+```{r}
+setwd("~/Applied Data Science/project-3-algorithms-project-3-algorithms-group-3-similarity-weight/data/")
+movie_train <- read.csv("./eachmovie_sample/data_train.csv", as.is = TRUE, header = TRUE)
+movie_train <- movie_train[, 2:4]
+
+head(movie_train)
+
+users  <- sort(unique(movie_train$User))
+movies <- sort(unique(movie_train$Movie))
+
+length(users)
+length(movies)
+
+movie_UI            <- matrix(NA, nrow = length(users), ncol = length(movies))
+row.names(movie_UI) <- users
+colnames(movie_UI)  <- movies
+
+movies  <- movie_train$Movie[movie_train$User == users[1]]
+ratings <- movie_train$Score[movie_train$User == users[1]]
+
+ord     <- order(movies)
+movies  <- movies[ord]
+ratings <- ratings[ord]
+
+system.time(movie_UI[1, colnames(movie_UI) %in% movies] <- ratings)
+
+long.in <- function(movies, ratings) {
+  
+  # Cycle through the ratings, find the corresponding column
+  for (i in 1:length(ratings)) {
+    column <- which(colnames(movie_UI) == movies[i])
+    movie_UI[2, column] <- ratings[i]
+    print(column)
+  }
+  
+}
+
+system.time(long.in(movies, ratings))
+  
+all(movie_UI[1, ] == movie_UI[2,], na.rm = TRUE)
+
+movie_UI <- movie_data_transform(movie_train)
+save(movie_UI, file = "movie_UI.RData")
+
+total_ratings <- rowSums(movie_UI, na.rm = TRUE)
+
+table(total_ratings)
+mean(total_ratings)
+median(total_ratings)
+```
+## Significance weighting
+
+```{r}
+#load UI
+load("movie_UI.RData")
+load("MS_UI.RData")
+
+get_significance <- function(data,threshold){
+  data[data == 0] <- NA # in case of MS data
+  #Needs matrix of [users,movies]
+  n_users = dim(data)[1]
+  rated = list()
+  for (i in 1:n_users) {
+    rated[[i]] = which(!is.na(data[i,]))
+  }
+  movie_significances = matrix(1.0,n_users,n_users)
+
+  for (i in 1:n_users) {
+    for (j in i+1:n_users){
+      signif = length(intersect(rated[[i]],rated[[j]]))
+      if (signif < threshold){
+        movie_significances[i,j] = signif / threshold
+        movie_significances[j,i] = signif / threshold
+      }
+    }
+  }
+  return(movie_significances)
+}
+movie_sigs = get_significance(movie_UI,50)
+
+MS_sigs = get_significance(MS_UI,50)
+
+save(movie_sigs,file="movie_sigs.RData")
+save(MS_sigs,file="MS_sigs.RData")
+```
+
+## Variance Weighting
+```{r}
+# get a list of item variances
+get_item_variances <- function(data){
+  n = dim(data)[2]
+  item_variances = rep(0,n)
+  for (i in 1:n){
+    workingcol = data[,i]
+    rated_ids = !is.na(workingcol)
+    workingcol = workingcol[rated_ids]
+    item_var = var(workingcol)
+    if (is.na(item_var)){
+      item_var = 0
+    }
+    item_variances[i] = item_var
+  }
+  item_variances = (item_variances - min(item_variances)) / max(item_variances)
+  return(item_variances)
+}
+
+movie_item_variances = get_item_variances(movie_UI)
+
+#get variance weighted correlations
+calc_var_weights <- function(data,item_variances){
+  #give it the data, and list of the item_variances
+  data       <- as.matrix(data)
+  weight_mat <- matrix(NA, nrow = nrow(data), ncol = nrow(data))
+  
+  #gets correlation between 2 rows
+  get_var_weighted_cor <- function(rowAin,rowBin){
+    joint_values <- !is.na(rowAin) & !is.na(rowBin)
+    if (sum(joint_values) == 0){ 
+      return(0)
+      }
+    rowA = rowAin[joint_values]
+    rowB = rowBin[joint_values]
+    meanA = mean(rowA)
+    meanB = mean(rowB)
+    n = length(rowA)
+    num = 0
+    magA = 0
+    magB = 0
+    for (i in 1:n){
+      Apart = rowA[i] - meanA
+      Bpart = rowB[i] - meanB
+      num = num + Apart * Bpart * item_variances[i]
+      magA = magA + Apart ^ 2
+      magB = magB + Bpart ^ 2
+    }
+    return(num / sqrt(magA) / sqrt(magB) * n / sum(item_variances))
+  }
+  
+  for(i in 1:nrow(data)) {
+      weight_mat[i, ] <- apply(data, 1, get_var_weighted_cor, data[i, ])
+      print(i)
+    }
+    return(round(weight_mat, 4))
+}
+movie_sim_var_weighted = calc_var_weights(movie_UI,movie_item_variances)
+save(movie_sim_var_weighted,file="movie_sim_var_weighted.RData")
+```
+## Calculating the Similarity Weights of the Users
+
+```{r}
+# Initiate the similarity weight matrix
+
+movie_UI         <- as.matrix(movie_UI)
+movie_sim_weight <- matrix(NA, nrow = nrow(movie_UI), ncol = nrow(movie_UI)) # it's a square
+
+rowA <- movie_UI[1, ]
+rowB <- movie_UI[2, ]
+
+cor(rowA, rowB, method = 'pearson', use = "pairwise.complete.obs")
+
+joint_values <- !is.na(rowA) & !is.na(rowB)
+cor(rowA[joint_values], rowB[joint_values], method = 'pearson')
+
+system.time(vec1 <- apply(movie_UI, 1, cor, movie_UI[1, ], method = 'pearson', use = "pairwise.complete.obs"))
+
+long.way <- function(row.num) {
+  
+  for(i in 1:nrow(movie_UI)) {
+    movie_sim_weight[row.num, i] <- cor(movie_UI[i, ], movie_UI[row.num, ], method = 'pearson', use = "pairwise.complete.obs")
+  }
+  
+}
+
+system.time(long.way(1))
+
+movie_sim_pearson <- calc_weight(movie_UI,"pearson")
+save(movie_sim_pearson, file = "movie_sim_pearson.RData")
+load("movie_sim_pearson.RData")
+movie_sim_pearson[1:10,1:10]
+
+MS_sim_pearson <- calc_weight(MS_UI,"pearson")
+save(MS_sim_pearson, file = "MS_sim_pearson.RData")
+load("MS_sim_pearson.RData")
+
+MS_sim_pearson[1:10,1:10]
+```
+
+### Just loading
+```{r}
+
+load("MS_sim_pearson.RData")
+load("movie_sim_pearson.RData")
+load("MS_pred_pearson.RData")
+load("MS_pred_pearson.RData")
+
+```
+## Loading test data
+```{r}
+MS_test <- read.csv("../data/MS_sample/data_test.csv", as.is = TRUE, header = TRUE)
+MS_test <- MS_test[, 2:4]
+MS_UI_test <- MS_data_transform(MS_test)
+save(MS_UI_test, file = "../output/MS_UI_test.Rdata")
+
+movie_test <- read.csv("../data/eachmovie_sample/data_test.csv", as.is = TRUE, header = TRUE)
+movie_test <- movie_test[, 2:4]
+movie_UI_test <- movie_data_transform(movie_test)
+save(movie_UI_test, file = "../output/movie_UI_test.RData")
+```
+## Predictions
+```{r}
+#Predictions
+
+MS_weighted = MS_sim_pearson * MS_sigs
+movie_weighted = movie_sim_pearson * movie_sigs
+
+MS_pred_pearson_weighted <- pred_matrix(MS_UI, MS_weighted)
+save(MS_pred_pearson_weighted, file = "MS_pred_pearson_weighted.RData")
+
+movie_pred_pearson_weighted <- pred_matrix(movie_UI, movie_weighted)
+save(movie_pred_pearson_weighted, file = "movie_pred_pearson_weighted.RData")
+
+movie_pred_var_weighted <- pred_matrix(movie_UI, movie_sim_var_weighted)
+save(movie_pred_var_weighted, file = "movie_pred_var_weighted.RData")
+
+#Testing accuracy
+MS_acc_pearson <- test_acc_MS(MS_pred_pearson, MS_UI_test)
+movie_acc_pearson <- test_acc_movie(movie_pred_pearson, movie_UI_test)
+
+MS_acc_pearson_weighted <- test_acc_MS(MS_pred_pearson_weighted, MS_UI_test)
+movie_acc_pearson_weighted <- test_acc_movie(movie_pred_pearson_weighted, movie_UI_test)
+
+```
