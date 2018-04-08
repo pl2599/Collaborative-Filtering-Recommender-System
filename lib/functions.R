@@ -230,14 +230,15 @@ test_acc_MS <- function(pred, test)
     # Calculate the expected utility and max utility for user i
     recom_items_cols <- which(pred[i,] > 0.5 & pred[i,] < 1)
     names_recom <- names(recom_items_cols)
-    recom_items_score <- pred[i, names_recom]
     actual_items_cols <- which(test[i,] == 1)
-    names_actual <- names(actual_items_cols)
-    recom_items_rank <- rank(-recom_items_score)
-    cols_to_score <- names_recom %in% names_actual
-    relevant_recom_items_rank <- recom_items_rank[cols_to_score]
+    actual_vote_recom <- test[i, names_recom]
+    #recom_items_score <- pred[i, names_recom]
+    #names_actual <- names(actual_items_cols)
+    #recom_items_rank <- rank(-recom_items_score)
+    #cols_to_score <- names_recom %in% names_actual
+    #relevant_recom_items_rank <- recom_items_rank[cols_to_score]
     
-    exp_util[i] <- sum(1/(2^((relevant_recom_items_rank - 1) / (5 - 1))))
+    exp_util[i] <- sum(actual_vote_recom/(2^((1:length(recom_items_cols) - 1) / (5 - 1))))
     max_util[i] <- sum(1/(2^((1:length(actual_items_cols) - 1) / (5 - 1))))
   }
   
