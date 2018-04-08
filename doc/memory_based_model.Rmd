@@ -445,10 +445,65 @@ movie_acc_pearson <- test_acc_movie(movie_pred_pearson,movie_UI_test)
 movie_acc_pearson
 ```
 
+### Spearman
 
+```{r}
+MS_acc_spearman <- test_acc_MS(MS_UI,MS_pred_spearman,MS_UI_test)
+MS_acc_spearman
+```
 
+```{r}
+movie_acc_spearman <- test_acc_movie(movie_pred_spearman,movie_UI_test)
+movie_acc_spearman
+```
 
+### Mean Squared Difference
 
+```{r}
+MS_acc_msd <- test_acc_MS(MS_UI,MS_pred_msd,MS_UI_test)
+MS_acc_msd
+```
+
+```{r}
+movie_acc_msd <- test_acc_movie(movie_pred_msd,movie_UI_test)
+movie_acc_msd
+```
+
+### Entropy
+
+```{r}
+MS_acc_entropy <- test_acc_MS(MS_UI,MS_pred_entropy,MS_UI_test)
+MS_acc_entropy
+```
+
+```{r}
+movie_acc_entropy <- test_acc_movie(movie_pred_entropy,movie_UI_test)
+movie_acc_entropy
+```
+
+### Cosine Vector
+
+```{r}
+MS_acc_vector <- test_acc_MS(MS_UI,MS_pred_vector,MS_UI_test)
+MS_acc_vector
+```
+
+```{r}
+movie_acc_vector <- test_acc_movie(movie_pred_vector,movie_UI_test)
+movie_acc_vector
+```
+
+### SimRank
+
+```{r}
+MS_acc_simrank <- test_acc_MS(MS_UI,MS_pred_simrank,MS_UI_test)
+MS_acc_simrank
+```
+
+```{r}
+movie_acc_simrank <- test_acc_movie(movie_pred_simrank,movie_UI_test)
+movie_acc_simrank
+```
 
 
 
