@@ -121,6 +121,12 @@ calc_weight <- function(data, method) {
       if (method == 'mean_squared_diff') {
         return(1/(1+sum((rowA[joint_values]-rowB[joint_values])^2)/length(rowA[joint_values])))
       }
+      if (method == 'entropy') {
+        return(MutInf(rowA[joint_values], rowB[joint_values]))
+      }
+      if (method == 'vector') {
+        return(cosine(rowA[joint_values], rowB[joint_values]))
+      }
     }
   }
   
@@ -218,4 +224,61 @@ pred_matrix <- function(data, simweights) {
   
   return(pred_mat)
 }
+
+
+
+
+
+test_acc_movie <- function(pred, test) {
+  
+  # Since test data only contains part of the columns. We need to filter out the columns 
+  # from prediction matrix so they have the same dimension as test data
+  pred <- pred[,colnames(test)]
+  
+  # Initiate the Average Absolute Deviation Score Vector 
+  scores <- rep(NA, nrow(test))
+  
+  for(i in 1:nrow(test)) {
+    
+    # Find columns we need to test for user i
+    cols_to_test <- which(!is.na(test[i, ]))
+    num_cols <- length(cols_to_test)
+    
+    # Calculate the score for user i
+    scores[i] <- sum(abs(pred[i, cols_to_test] - test[i, cols_to_test])) / num_cols
+  }
+  
+  return(mean(scores))
+}
+
+
+
+
+
+
+test_acc_MS <- function(data,pred,test) {
+  
+  # Since test data only contains part of the rows and columns. We need to filter out the rows and columns 
+  # from data and prediction matrix so they have the same dimension as test data
+  data <- data[rownames(test),colnames(test)]
+  pred <- pred[rownames(test),colnames(test)]
+  
+  # Initiate the Expected Utility Score Vector 
+  scores <- rep(NA, nrow(test))
+  
+  for(i in 1:nrow(test)) {
+    
+    row <- test[i,]
+    # Find columns we need to test for user i
+    cols_to_test <- which(row==1)
+    
+    # Calculate the score for user i
+    scores[i] <- sum((test[i,cols_to_test] - data[i,cols_to_test])*pred[i,cols_to_test])
+  }
+  
+  return(mean(scores))
+}
+
+
+
 

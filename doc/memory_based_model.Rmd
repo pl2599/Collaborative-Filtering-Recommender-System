@@ -431,6 +431,24 @@ MS_pred_simrank[1:10,1:10]
 ```
 
 
+## Compare predictions with actual ratings
+
+### Pearson
+
+```{r}
+MS_acc_pearson <- test_acc_MS(MS_UI,MS_pred_pearson,MS_UI_test)
+MS_acc_pearson
+```
+
+```{r}
+movie_acc_pearson <- test_acc_movie(movie_pred_pearson,movie_UI_test)
+movie_acc_pearson
+```
+
+
+
+
+
 
 
 
