@@ -33,10 +33,12 @@ buildUI_test <- F
 run_sim_weights <- F
 run_pred <- F
 run_test <- T
-run_pearson <- F
-run_spearman <- F
+run_pearson <- T
+run_spearman <- T
 run_entropy <- T
 run_vector <- T
+run_msd <- T
+run_simrank <- T
 ```
 
 ### Step 2: Build or Load UIs
@@ -216,6 +218,28 @@ if(run_test)
     
     cat("Accuracy of MS with vector =", MS_acc_vector, "score \n")
     cat("Accuracy of movie with vector =", movie_acc_vector, "deviations \n")
+  }
+  if(run_msd)
+  {
+    load("../output/MS_pred_msd.RData")
+    load("../output/movie_pred_msd.RData")
+    
+    MS_acc_msd <- test_acc_MS(MS_pred_msd, MS_UI_test)
+    movie_acc_msd <- test_acc_movie(movie_pred_msd, movie_UI_test)
+    
+    cat("Accuracy of MS with msd =", MS_acc_msd, "score \n")
+    cat("Accuracy of movie with msd =", movie_acc_msd, "deviations \n")
+  }
+  if(run_simrank)
+  {
+    load("../output/MS_pred_simrank.RData")
+    load("../output/movie_pred_simrank.RData")
+    
+    MS_acc_simrank <- test_acc_MS(MS_pred_simrank, MS_UI_test)
+    movie_acc_simrank <- test_acc_movie(movie_pred_simrank, movie_UI_test)
+    
+    cat("Accuracy of MS with simrank =", MS_acc_simrank, "score \n")
+    cat("Accuracy of movie with simrank =", movie_acc_simrank, "deviations \n")
   }
 }
 
