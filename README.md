@@ -22,7 +22,7 @@ Term: Spring 2018
 
 + Alek Anichowski -
 + Jerome Kafrouni -
-+ Pak Kin Lai -
++ Pak Kin Lai - Calculated and evaluated Entropy and Vector similarity weights. Provided the outline for the main rmd file. Created the evaluation functions for movie and MS.
 + Chunzi Wang - Calculated and evaluated Pearson, Spearman, Mean Squared Difference, and SimRank similarity weights.
 
 
