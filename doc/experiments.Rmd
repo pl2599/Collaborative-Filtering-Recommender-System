@@ -1,0 +1,352 @@
+---
+title: "Experiments on dataset and EM"
+output: html_notebook
+---
+
+This notebook contains some experiments to figure out how the dataset will be used (based on in-class tutorials), and how we'll implement the EM algorithm to compute the clusters.
+
+```{r}
+source("../lib/functions.R")
+```
+
+# Load the data
+
+```{r}
+# movie_train <- read.csv("../data/eachmovie_sample/data_train.csv", as.is = TRUE, header = TRUE)
+# MS_train <- read.csv("../data/MS_sample/data_train.csv", as.is = TRUE, header = TRUE)
+```
+
+```{r}
+# system.time(MS_UI <- MS_data_transform(MS_train))
+# system.time(movies_UI <- movie_data_transform(movie_train))
+
+# save(MS_UI, file = "../data/ms_UI.RData")
+# save(movies_UI, file = "../data/movies_UI.RData")
+```
+
+```{r}
+load("../data/ms_UI.RData")
+load("../data/movies_UI.RData")
+```
+
+
+```{r}
+dim(movies_UI)
+```
+
+# Important note
+Each row of the matrix movies_UI corresponds to a user. Yet, not all users are in this matrix.
+If we access a row through movies_UI[i,] with i an integer, we will get the ratings for the ith user in the matrix, not user number i.
+If we want to access this user's rating correctly, we need to use a string instead:
+
+```{r}
+head(movies_UI)
+movies_UI[2,] # gives ratings of 2nd user in matrix which is in fact user 23
+movies_UI["23",] # gives ratings of user 23 (which is 2nd user in this matrix)
+```
+
+We don't have this issue for movies though.
+
+# Preliminary check
+Check if there are movies that have no rating, if it's the case we'll have to deal with these cases:
+
+```{r}
+# there's probably a cleaner way to check that
+for (j in 1:1619){
+  stopifnot(!all(is.na(movies_UI[,j])))
+}
+```
+
+For test purposes we reduce the size of movies_UI:
+If we simply shrink the matrix, we might end up with movies that have only NA ratings, so we need to remove them:
+
+```{r}
+# same as above, ugly code
+# movies_UI <- movies_UI[1:500,1:200]
+# non_na_columns = matrix(TRUE, 200)
+# 
+# for (j in 1:200){
+#   if (all(is.na(movies_UI[,j]))){
+#     non_na_columns[j] = FALSE
+#   }
+# }
+# 
+# movies_UI <- movies_UI[,which(non_na_columns)]
+```
+
+# Notations
+
+μˆc on the  slides <=> prob_class[c] with c (class index) an integer
+γˆjk on the slides <=> prob_rating[c,j,k] with c (class index), j (movie index / website index) and k (rating) integers
+
+
+
+
+# Expectation Step
+
+Recompute assignment matrix *assignment* for c = 1,2,...,C and i = 1,2,...,n_users:
+
+There's a main issue which is that the formula to update the assignment (slide 42) involves products of many small probabilities (around 0.1). Therefore we quickly reach the smallest float precision in R and the product is approximated to 0 (minimal precision in R is 2e-308). We can't use log to solve this problem since the denominator is a sum....
+
+One solution seems to be scaling prob_rating to mean=1 before computing the products:
+
+```{r}
+update_assignment <- function(UI_matrix, C, assignment, prob_class, prob_rating){
+  # trick: prob_rating contains floats between 0 and 1
+  # since we do a products of a lot of these floats, we'll underflow at some point
+  # to fix this scale prob_rating (to mean=1) initially
+  # since we're taking ratios eventually this is still correct.
+  n_users <- dim(UI_matrix)[1]
+  prob_rating <- prob_rating/mean(prob_rating)
+  for (i in 1:n_users){
+    movies_rated_by_i <- which(!is.na(UI_matrix[i,]))
+    ratings_given_by_i <- UI_matrix[i,!is.na(UI_matrix[i,])]
+    
+    # we first compute all numerators in the formula for assignment[i,c]:
+    for (c in 1:C){
+      assignment[i,c] <- prob_class[c]
+      for (k in 1:length(movies_rated_by_i)){
+        # still looking for a way to avoid this loop...
+        assignment[i,c] <- assignment[i,c] * prob_rating[c, movies_rated_by_i[[k]], ratings_given_by_i[[k]]]
+      }
+    }
+    
+    # and then divide by the sum:
+    assignment[i,] <- assignment[i,]/sum(assignment[i,])
+    
+    if (is.na(sum(assignment[i,]))){
+      print("problem in assignment update")
+    }
+  }
+  return(assignment)
+}
+```
+
+# Maximization Step
+
+Recompute parameters estimates *prob_class* for c=1..C and *prob_rating* for all c,j,k.
+
+```{r}
+update_prob_class <- function(UI_matrix, C, prob_class, assignment){
+  # C being generally small, no need to optimize this for loop
+  n_users <- dim(UI_matrix)[1]
+  for (c in 1:C){
+    prob_class[c] <- sum(assignment[!is.na(assignment[,c]),c])/n_users
+  }
+  return(prob_class)
+}
+
+update_prob_rating <- function(UI_matrix, C, prob_rating, assignment){
+  n_items <- dim(UI_matrix)[2]
+  for (c in 1:C){
+    for (j in 1:n_items){
+      users_who_rated_item_j <- which(!is.na(UI_matrix[,j]))
+      denominator <- sum(assignment[users_who_rated_item_j,c])
+      # warning: denominator can be = 0 ! (if prob_class got to 0 for class c at previous step)
+      # print(denominator)
+      for(k in 1:6){
+        if (denominator != 0){
+          numerator <- sum((UI_matrix[users_who_rated_item_j,j] == k) * assignment[users_who_rated_item_j,c])
+          prob_rating[c,j,k] <- numerator/denominator
+        } else{
+          prob_rating[c,j,k] <- 0
+        }
+      }
+    }
+  return(prob_rating)
+  }
+}
+```
+
+
+```{r}
+em <- function(UI_matrix, C, epsilon, max_steps=100){
+  
+  n_users <- dim(UI_matrix)[1]
+  n_items <- dim(UI_matrix)[2]
+  step <- 0
+  prob_class <- matrix(1/C, nrow=C)
+  prob_rating <- array(1/6, dim=c(C, n_items, 6))
+  assignment <- matrix(NA, nrow=n_users, ncol=C)
+
+  while (TRUE){
+    step <- step + 1
+    # E:
+    new_assignment <- update_assignment(UI_matrix, C, assignment, prob_class, prob_rating)
+
+    # M:
+    new_prob_class <- update_prob_class(UI_matrix, C, prob_class, new_assignment)
+    new_prob_rating <- update_prob_rating(UI_matrix, C, prob_rating, new_assignment)
+    
+    if ((step > 1) & (norm(new_prob_class - prob_class) < epsilon)){
+      # convergence: we check if prob_class and prob_rating converge
+      # TODO: maybe checking for convergence of likelihood would be better ?
+      print(paste0('converged in ', step, ' steps.'))
+      return(list(assignment, prob_class, prob_rating))
+    } else if (step > max_steps){
+      print('reached max number of steps without converging, returning...')
+      return(list(assignment, prob_class, prob_rating))
+    }
+    
+    assignment <- new_assignment
+    prob_class <- new_prob_class
+    prob_rating <- new_prob_rating
+    print(paste0('step ', step,' done'))
+  }
+}
+
+system.time(result <- em(movies_UI, C=10, epsilon=0.001))
+
+assignment <- result[[1]]
+prob_class <- result[[2]]
+prob_rating <- result[[3]]
+```
+
+
+# Check results:
+
+```{r}
+for (i in 1:dim(assignment)[1]){
+  stopifnot(abs(sum(assignment[i,]) - 1) < 0.001)
+}
+```
+
+# Compute likelihood of parameters
+
+```{r}
+# TODO
+```
+
+
+# Do predictions:
+
+Now that we have approximated all parameters, we can do predictions.
+For each user:
+We compute the probability of giving each rating using the soft assignments
+And then compute the expectation of the rating given the probabilities we just computed.
+
+Note that once we optimize the rest of the code (by using matrix operations as often as possible) we will also optimize the prediction part.
+
+## Naive and slow version:
+
+```{r}
+estimate_rating_user_movie <- function(C, i, j, prob_class, prob_rating, assignment){
+  # estimate rating of user i for item j, given learned parameters
+
+  # Step 1: compute probabilities for each rating
+  probs <- matrix(0, nrow=6)
+  for (k in 1:6){
+    for (c in 1:C){
+      probs[k] = probs[k] + assignment[i, c] * prob_rating[c, j, k]
+    }
+  }
+
+  # Step 2: compute expectation
+  expected_rating <- 0
+  for (k in 1:6){
+    expected_rating <- expected_rating + k*probs[k]
+  }
+  
+  return(expected_rating)
+}
+
+estimate_rating_user_movie(10, 1, 1, prob_class, prob_rating, assignment)
+```
+
+
+```{r}
+predict_all_slow <- function(UI_matrix, C, prob_class, prob_rating, assignment){
+  n_users <- dim(UI_matrix)[1]
+  n_items <- dim(UI_matrix)[2]
+  # fills in UI_matrix and returns full matrix
+  for (i in 1:n_users){
+    for (j in 1:n_items){
+      if (is.na(UI_matrix[i,j])){
+        UI_matrix[i,j] <- estimate_rating_user_movie(C, i, j, prob_class, prob_rating, assignment)
+      }
+    }
+  }
+  return(UI_matrix)
+}
+```
+
+```{r}
+system.time(predicted_UI <- predict_all_slow(movies_UI, 10, prob_class, prob_rating, assignment)) # will take around 8 min ?
+```
+
+## Faster version:
+
+```{r}
+estimate_rating_movie <- function(UI_matrix, j, prob_class, prob_rating, assignment){
+  n_users <- dim(UI_matrix)[1]
+  # estimate all ratings for movie j at once
+  ratings <- matrix(0, nrow=n_users)
+  for (k in 1:6){
+    ratings <- ratings + k*assignment%*%prob_rating[,j,k]
+  }
+  return(ratings)
+}
+
+predict_all_v2 <- function(UI_matrix, prob_class, prob_rating, assignment){
+  n_items <- dim(UI_matrix)[2]
+  for (j in 1:n_items){
+    UI_matrix[,j] <- estimate_rating_movie(UI_matrix, j, prob_class, prob_rating, assignment)
+  }
+  return(UI_matrix)
+}
+```
+
+Since we're using matrix operations, the prediction is much faster (20 times faster):
+
+```{r}
+system.time(predicted_UI <- predict_all_v2(movies_UI, prob_class, prob_rating, assignment))
+```
+
+
+# Test results
+
+The test data contains some ratings that were missing for users. We can compare our predictions with these values.
+
+```{r}
+# movie_test <- read.csv("../data/eachmovie_sample/data_test.csv", as.is = TRUE, header = TRUE)
+# MS_test <- read.csv("../data/MS_sample/data_test.csv", as.is = TRUE, header = TRUE)
+```
+
+```{r}
+# system.time(MS_UI_test <- MS_data_transform(MS_test))
+# system.time(movies_UI_test <- movie_data_transform(movie_test))
+
+# save(MS_UI_test, file = "../data/MS_UI_test.RData")
+# save(movies_UI_test, file = "../data/movies_UI_test.RData")
+```
+
+```{r}
+load("../data/MS_UI_test.RData")
+load("../data/movies_UI_test.RData")
+```
+
+WARNING there might be an error because movies_UI_test has less columns than movies_UI, so indices might be messed up:
+
+```{r}
+indices_to_predict <- which(!is.na(movies_UI_test))
+```
+
+
+Mean squared error, mean absolute error:
+
+```{r}
+MSE <- sum((predicted_UI[indices_to_predict] - movies_UI_test[indices_to_predict])**2)/length(movies_UI_test[indices_to_predict])
+MAE <- sum(abs(predicted_UI[indices_to_predict] - movies_UI_test[indices_to_predict]))/length(movies_UI_test[indices_to_predict])
+
+print(MSE)
+print(MAE)
+```
+
+R^2 score (coefficient of determination)
+
+```{r}
+R2 <- 1 - sum((predicted_UI[indices_to_predict] - movies_UI_test[indices_to_predict])**2)/sum((predicted_UI[indices_to_predict] - mean(predicted_UI[indices_to_predict]))**2)
+
+print(R2)
+```
+
