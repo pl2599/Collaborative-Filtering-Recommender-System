@@ -1,0 +1,170 @@
+---
+title: "Project 3 - Main script"
+author: "Alek Anichowski, Jerome Kafrouni, Pak Kin Lai, Michael Sheng, Chunzi Wang"
+date: "March 5, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Load libraries
+
+```{r}
+source("../lib/functions.R")
+source("../lib/em.R")
+source("../lib/model_based_predictions.R")
+source("../lib/functions.R")
+source("../lib/cross_validation.R")
+```
+
+# Load the data
+
+```{r}
+# movie_train <- read.csv("../data/eachmovie_sample/data_train.csv", as.is = TRUE, header = TRUE)
+# MS_train <- read.csv("../data/MS_sample/data_train.csv", as.is = TRUE, header = TRUE)
+```
+
+```{r}
+# system.time(MS_UI <- MS_data_transform(MS_train))
+# system.time(movies_UI <- movie_data_transform(movie_train))
+
+# save(MS_UI, file = "../output/ms_UI.RData")
+# save(movies_UI, file = "../output/movies_UI.RData")
+```
+
+```{r}
+load("../output/MS_UI.RData")
+load("../output/movie_UI.RData")
+```
+
+
+```{r}
+dim(movie_UI)
+dim(MS_UI)
+```
+
+# Task 1: implementing two models for Collaborative Filtering
+
+## Memory-based approach
+
+See other main file, *main_memory_based.rmd*.
+
+## Model-based approach
+
+The main idea is to model the ratings of users by assigning them to latent (uknown) clusters. In each cluster, we make the assumption that users rate movies similarly. We also make a Naive Bayes assumption over all the movies each user rates.
+
+To compute assignment to unknown clusters, we use the EM algorithm.
+
+To choose the number of clusters (which is an input of the EM algorithm), we use Cross Validation.
+
+### Step 1: Run the EM algorithm to estimate parameters:
+
+- *assignment* corresponds to the M matrix on the tutorial's slides (or the a_i_c values)
+- *prob_class* corresponds to the mu_c values (probability of each class)
+- *prob_rating* corresponds to the gamma_c_j_k values (prob_rating[class c, movie j, rating k])
+
+#### Select number of clusters by cross-validation:
+
+Movies:
+
+```{r}
+model_values <- list()
+for (C in list(3, 5, 8, 10, 15, 20)){
+  model_values[[length(model_values)+1]] <- list(C=C, epsilon=1)
+}
+
+err_cv <- array(dim = c(length(model_values), 2))
+for(k in 1:length(model_values)){
+    cat("k=", k, "\n")
+    err_cv[k,] <- cv.function(movie_UI, K=3, par=model_values[[k]], dataset='movies')
+    print(paste0('err for this k: ', err_cv[k,]))
+}
+
+print(paste0('best param for movies: ', model_values[which.min(err_cv[,1])]))
+print(paste0('best accuracy for movies: ', min(err_cv[,1])))
+```
+
+MS dataset:
+
+```{r}
+model_values <- list()
+for (C in list(3, 5, 8, 10, 15, 20)){
+  model_values[[length(model_values)+1]] <- list(C=C, epsilon=1)
+}
+
+err_cv <- array(dim = c(length(model_values), 2))
+for(k in 1:length(model_values)){
+    cat("k=", k, "\n")
+    err_cv[k,] <- cv.function(MS_UI, K=3, par=model_values[[k]], dataset='MS')
+    print(paste0('err for this k: ', err_cv[k,]))
+}
+
+print(paste0('best param for MS: ', model_values[which.max(err_cv[,1])]))
+print(paste0('best accuracy for MS: ', max(err_cv[,1])))
+```
+
+#### Train on full training data
+
+```{r}
+system.time(result <- em(movie_UI, C=8, epsilon=0.01, dataset='movies'))
+
+assignment_movies <- result[[1]]
+prob_class_movies <- result[[2]]
+prob_rating_movies <- result[[3]]
+
+system.time(result <- em(MS_UI, C=8, epsilon=0.01, dataset='MS'))
+
+assignment_MS <- result[[1]]
+prob_class_MS <- result[[2]]
+prob_rating_MS <- result[[3]]
+```
+
+### Step 2: Check results:
+
+Check if probabilities are correct:
+
+```{r}
+em_check(assignment_movies, prob_class_movies, prob_rating_movies)
+# There is only one issue with one row of movie_UI which seems to be coming from the dataset.
+em_check(assignment_MS, prob_class_MS, prob_rating_MS)
+```
+
+Compute likelihood of parameters:
+
+```{r}
+# TODO
+```
+
+### Step 3: Predict ratings
+
+```{r}
+system.time(predicted_movies_UI <- predict_all_v2(movie_UI, prob_class_movies, prob_rating_movies, assignment_movies))
+system.time(predicted_MS_UI <- predict_all_v2(MS_UI, prob_class_MS, prob_rating_MS, assignment_MS, dataset='MS'))
+```
+
+### Step 4: Measure performance on test data
+
+The test data contains some ratings that were missing for users. We can compare our predictions with these values.
+
+```{r}
+# movie_test <- read.csv("../data/eachmovie_sample/data_test.csv", as.is = TRUE, header = TRUE)
+# MS_test <- read.csv("../data/MS_sample/data_test.csv", as.is = TRUE, header = TRUE)
+```
+
+```{r}
+# system.time(MS_UI_test <- MS_data_transform(MS_test))
+# system.time(movie_UI_test <- movie_data_transform(movie_test))
+
+# save(MS_UI_test, file = "../output/MS_UI_test.RData")
+# save(movie_UI_test, file = "../output/movie_UI_test.RData")
+```
+
+```{r}
+load("../output/MS_UI_test.RData")
+load("../output/movie_UI_test.RData")
+```
+
+```{r}
+test_acc_MS(predicted_MS_UI, MS_UI_test)
+test_acc_movie(predicted_movies_UI, movie_UI_test)
+```
