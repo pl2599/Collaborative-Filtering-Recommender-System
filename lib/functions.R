@@ -222,23 +222,32 @@ test_acc_movie <- function(pred, test)
 
 test_acc_MS <- function(pred, test)
 {
+  #Initiate Expected utility and max utility vector
   exp_util <- rep(NA, nrow(test))
   max_util <- rep(NA, nrow(test))
+  
+  #Initiate test matrix including 0s for missing items
+  test_mod <- test
+  unmatched_cols <- setdiff(colnames(pred), colnames(test))
+  test_mod[, unmatched_cols] <- 0
+  
   
   for(i in 1:nrow(test))
   {
     # Calculate the expected utility and max utility for user i
-    recom_items_cols <- which(pred[i,] > 0.5 & pred[i,] < 1)
-    names_recom <- names(recom_items_cols)
-    actual_items_cols <- which(test[i,] == 1)
-    actual_vote_recom <- test[i, names_recom]
+    #recom_items_cols <- which(pred[i,] > 0.5 & pred[i,] < 1)
+    recom_items_value <- pred[i,]
+    sorted_recom_items_value <- sort(recom_items_value, decreasing = T)
+    sorted_names_recom <- names(sorted_recom_items_value)
+    actual_vote_recom <- test_mod[i, sorted_names_recom]
+    actual_items_cols <- which(test_mod[i,] == 1)
     #recom_items_score <- pred[i, names_recom]
     #names_actual <- names(actual_items_cols)
     #recom_items_rank <- rank(-recom_items_score)
     #cols_to_score <- names_recom %in% names_actual
     #relevant_recom_items_rank <- recom_items_rank[cols_to_score]
     
-    exp_util[i] <- sum(actual_vote_recom/(2^((1:length(recom_items_cols) - 1) / (5 - 1))))
+    exp_util[i] <- sum(actual_vote_recom/(2^((1:length(recom_items_value) - 1) / (5 - 1))))
     max_util[i] <- sum(1/(2^((1:length(actual_items_cols) - 1) / (5 - 1))))
   }
   
