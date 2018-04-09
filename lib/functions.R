@@ -227,16 +227,17 @@ test_acc_MS <- function(pred, test)
   max_util <- rep(NA, nrow(test))
   
   #Initiate test matrix including 0s for missing items
-  test_mod <- test
+  test_mod <- as.data.frame(test)
+  names <- colnames(test_mod)
   unmatched_cols <- setdiff(colnames(pred), colnames(test))
-  test_mod[, unmatched_cols] <- 0
-  
+  test_mod[unmatched_cols] <- 0
+  test_mod <- as.matrix(test_mod)
   
   for(i in 1:nrow(test))
   {
     # Calculate the expected utility and max utility for user i
     #recom_items_cols <- which(pred[i,] > 0.5 & pred[i,] < 1)
-    recom_items_value <- pred[i,]
+    recom_items_value <- pred[i, which(pred[i,] < 1)]
     sorted_recom_items_value <- sort(recom_items_value, decreasing = T)
     sorted_names_recom <- names(sorted_recom_items_value)
     actual_vote_recom <- test_mod[i, sorted_names_recom]
