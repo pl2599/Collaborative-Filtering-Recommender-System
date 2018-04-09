@@ -17,12 +17,14 @@ source("../lib/functions.R")
 source("../lib/cross_validation.R")
 ```
 
-# Load the data
+# Load and preprocess the data
 
 ```{r}
 # movie_train <- read.csv("../data/eachmovie_sample/data_train.csv", as.is = TRUE, header = TRUE)
 # MS_train <- read.csv("../data/MS_sample/data_train.csv", as.is = TRUE, header = TRUE)
 ```
+
+We first convert the datasets into user-item (UI) matrices. In these matrices, position (i,j) contains the rating of user i for item j.
 
 ```{r}
 # system.time(MS_UI <- MS_data_transform(MS_train))
@@ -31,6 +33,8 @@ source("../lib/cross_validation.R")
 # save(MS_UI, file = "../output/ms_UI.RData")
 # save(movies_UI, file = "../output/movies_UI.RData")
 ```
+
+For convenience we have already computed the UI matrices (the code above takes a few minutes to run):
 
 ```{r}
 load("../output/MS_UI.RData")
@@ -53,9 +57,13 @@ See other main file, *main_memory_based.rmd*.
 
 The main idea is to model the ratings of users by assigning them to latent (uknown) clusters. In each cluster, we make the assumption that users rate movies similarly. We also make a Naive Bayes assumption over all the movies each user rates.
 
-To compute assignment to unknown clusters, we use the EM algorithm.
+Therefore, we can think of the rating process as the following sampling process: for a user, first we sample its cluster assignment, then we sample the rating of a given movie which follows the same distribution for all users of the cluster (in this project, we assume that this distribution is multinomial.).
 
-To choose the number of clusters (which is an input of the EM algorithm), we use Cross Validation.
+Therefore we need to approximate a set of parameters which are the probabilities of being in each class, and the probabilities of giving each rating to each movie for each class. If we knew the cluster assignments, we could use a simple Maximum Likelihood Estimator of the parameters for each class. Since the cluster assignments are actually unknown, we have to use the EM algorithm.
+
+The EM algorithm is very similar to k-means: it's done in two steps, the first is to assign points to clusters (expectation or "E" step), and the second is to update the parameters for each cluster (maximization or "M" step). The key difference to k-means is that here the cluster assignments are "soft" assignment i.e. each point has a given probability of being in each cluster.
+
+To choose the number of clusters (which is an input of the EM algorithm), we use Cross Validation. There are more complex techniques that can be used for this task, yet not used nor implemented for this project.
 
 ### Step 1: Run the EM algorithm to estimate parameters:
 
@@ -105,6 +113,8 @@ print(paste0('best accuracy for MS: ', max(err_cv[,1])))
 
 #### Train on full training data
 
+Now that we have selected the best number of clusters (C=8 for both datasets), we train again on the whole dataset. This time, we check for convergence with a smaller epsilon to increase accuracy since we'll be using these parameters for the actual predictions (in cross-validation we could afford a lower precision).
+
 ```{r}
 system.time(result <- em(movie_UI, C=8, epsilon=0.01, dataset='movies'))
 
@@ -129,13 +139,11 @@ em_check(assignment_movies, prob_class_movies, prob_rating_movies)
 em_check(assignment_MS, prob_class_MS, prob_rating_MS)
 ```
 
-Compute likelihood of parameters:
-
-```{r}
-# TODO
-```
-
 ### Step 3: Predict ratings
+
+Now that we have approximated parameters, we can use them to get expected ratings of items. The formulas are close to what we used during the EM algorithm. We fill in all the NAs from the UI matrix with expected ratings. Here, we do pass the UI matrix as an argument of the predict function, since we're going to fill in this matrix, but note that in general we do not need this UI matrix (if we were doing predictions for other cases), which is very useful: we don't have to keep the UI matrix in memory after approximating the parameters, which is a main advantage of this approach (compared to memory-based approach). It's similar to the difference between models such as k-nearest-neighbors (where we have to keep all points of the training data to compute predictions) verus other ML algorithms.
+
+Note: *model_based_predictions.R* contains depreceated (because slow) version of the prediction functions that use for loops instead of matrix computations. Here we use a faster version (*predict_all_v2*) to compute the predictions:
 
 ```{r}
 system.time(predicted_movies_UI <- predict_all_v2(movie_UI, prob_class_movies, prob_rating_movies, assignment_movies))
