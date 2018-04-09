@@ -10,22 +10,19 @@
 
 Term: Spring 2018
 
-+ Project title: [a title]
-+ Team Number: [a number]
-+ Team Members: [a list of team members]
-+ Project summary: [a short summary] 
++ Project title: Recommender System Algorithm Impementation and Evaluation
++ Team Number: Group 3 
++ Team Members: Alek Anichowski, Jerome Kafrouni, Pak Kin Lai, Chunzi Wang
++ Project summary: In this project we implemented model-based algorithm (EM Clustering) and memory-based algorithms (similarity weights used include Pearson correlation, Spearman correlation, Cosine Vector, Entropy, Mean Squared Difference, Significance and Variance Weighting) to built a collaborative filtering recommender system. We built these algorithms from scratch and then evaluated their performance on two datasets: implicit voting Microsoft Web Data and explicit voting EachMovie data.
++ Prediction Results:
 
-Contribution statement: [default](doc/a_note_on_contributions.md) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement.
 
-Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
-```
-proj/
-├── lib/
-├── data/
-├── doc/
-├── figs/
-└── output/
-```
+#### Contribution statement
 
-Please see each subfolder for a README file.
++ Alek Anichowski -
++ Jerome Kafrouni -
++ Pak Kin Lai -
++ Chunzi Wang - Calculated and evaluated Pearson, Spearman, Mean Squared Difference, and SimRank similarity weights.
+
+
