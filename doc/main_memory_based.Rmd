@@ -1,6 +1,6 @@
 ---
 title: "Collaborative Filtering on Memory-Based Method"
-author: "Group 3"
+author: "Alek Anichowski, Jerome Kafrouni, Pak Kin Lai, Chunzi Wang"
 date: "4/8/2018"
 output: html_document
 ---
