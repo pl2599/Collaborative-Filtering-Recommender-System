@@ -10,11 +10,11 @@ output:
 # Load libraries
 
 ```{r}
-+source("../lib/functions.R")
-+source("../lib/em.R")
-+source("../lib/model_based_predictions.R")
-+source("../lib/functions.R")
-+source("../lib/cross_validation.R")
+source("../lib/functions.R")
+source("../lib/em.R")
+source("../lib/model_based_predictions.R")
+source("../lib/functions.R")
+source("../lib/cross_validation.R")
 ```
 
 # Load and preprocess the data
@@ -152,7 +152,7 @@ system.time(predicted_MS_UI <- predict_all_v2(MS_UI, prob_class_MS, prob_rating_
 
 ### Step 4: Measure performance on test data
 
-The test data contains some ratings that were missing for users. We can compare our predictions with these values.
+The test data contains some ratings that were missing for users. We can compare our predictions with these values. Each dataset is tested using a different metric, mean absolute deviation for the movie dataset since we have numerical ratings, and expected utility for the MS dataset since we have binary entries (for this metric, the main idea is to rank the items in the best order for the user, where "best" means maximizing the user's utility).
 
 ```{r}
 # movie_test <- read.csv("../data/eachmovie_sample/data_test.csv", as.is = TRUE, header = TRUE)
