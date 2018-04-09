@@ -1,0 +1,286 @@
+---
+title: "Collaborative Filtering on Memory-Based Method"
+author: "Group 3"
+date: "4/8/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+## Step 0: Specify Directories and Source
+
+```{r}
+setwd("E:/GitHub/project-3-algorithms-project-3-algorithms-group-3")
+source("E:/GitHub/project-3-algorithms-project-3-algorithms-group-3/lib/functions.R")
+```
+
+
+## Step 1: Building the UI matrix for the MS Data and EachMovie Data (train and test)
+
+```{r}
+MS_train <- read.csv("../data/MS_sample/data_train.csv", as.is = TRUE, header = TRUE)
+MS_train <- MS_train[, 2:4]
+MS_UI <- MS_data_transform(MS_train)
+save(MS_UI, file = "../output/MS_UI.Rdata")
+  
+movie_train <- read.csv("../data/eachmovie_sample/data_train.csv", as.is = TRUE, header = TRUE)
+movie_train <- movie_train[, 2:4]
+movie_UI <- movie_data_transform(movie_train)
+save(movie_UI, file = "../output/movie_UI.RData")
+
+MS_test <- read.csv("../data/MS_sample/data_test.csv", as.is = TRUE, header = TRUE)
+MS_test <- MS_test[, 2:4]
+MS_UI_test <- MS_data_transform(MS_test)
+save(MS_UI_test, file = "../output/MS_UI_test.Rdata")
+  
+movie_test <- read.csv("../data/eachmovie_sample/data_test.csv", as.is = TRUE, header = TRUE)
+movie_test <- movie_test[, 2:4]
+movie_UI_test <- movie_data_transform(movie_test)
+save(movie_UI_test, file = "../output/movie_UI_test.RData")
+```
+
+
+## Step 2: Calculating the Similarity Weights of the Users
+
+### Pearson correlation
+
+```{r}
+movie_sim_pearson <- calc_weight(movie_UI,method=="pearson")
+save(movie_sim_pearson, file = "../output/movie_sim_pearson.RData")
+
+MS_sim_pearson <- calc_weight(MS_UI,method=="pearson")
+save(MS_sim_pearson, file = "../output/MS_sim_pearson.RData")
+```
+
+### Spearman correlation
+
+```{r}
+movie_sim_spearman <- calc_weight(movie_UI,method="spearman")
+save(movie_sim_spearman, file = "../output/movie_sim_spearman.RData")
+
+MS_sim_spearman <- calc_weight(MS_UI,method="spearman")
+save(MS_sim_spearman, file = "../output/MS_sim_spearman.RData")
+```
+
+### Entropy
+
+```{r}
+MS_sim_entropy <- calc_weight(MS_UI, method="entropy")
+save(MS_sim_entropy, file = "../output/MS_sim_entropy.RData")
+    
+movie_sim_entropy <- calc_weight(movie_UI, method="entropy")
+save(movie_sim_entropy, file = "../output/movie_sim_entropy.Rdata")
+```
+
+### Cosine Vector
+
+```{r}
+MS_sim_vector <- calc_weight(MS_UI,method="vector")
+save(MS_sim_vector, file = "../output/MS_sim_vector.RData")
+    
+movie_sim_vector <- calc_weight(movie_UI, method="vector")
+save(movie_sim_vector, file = "../output/movie_sim_vector.RData")
+```
+
+### Mean Squared Difference
+
+```{r}
+movie_sim_msd <- calc_weight(movie_UI,method="mean_squared_diff")
+save(movie_sim_msd, file = "../output/movie_sim_msd.RData")
+
+MS_sim_msd <- calc_weight(MS_UI,method="mean_squared_diff")
+save(MS_sim_msd, file = "../output/MS_sim_msd.RData")
+```
+
+### SimRank Similarity
+
+```{r}
+movie_sim_simrank <- calc_simrank(movie_UI)
+save(movie_sim_simrank, file = "../output/movie_sim_simrank.RData")
+
+MS_sim_simrank <- calc_simrank(MS_UI)
+save(MS_sim_simrank, file = "../output/MS_sim_simrank.RData")
+```
+
+### Significance Weighting + Pearson
+
+```{r}
+movie_sigs = get_significance(movie_UI,50)
+save(movie_sigs,file="../output/movie_sigs.RData")
+
+MS_sigs = get_significance(MS_UI,50)
+save(MS_sigs,file="../output/MS_sigs.RData")
+```
+
+### Variance Weighting + Pearson
+
+```{r}
+movie_item_variances = get_item_variances(movie_UI)
+movie_sim_var_weighted = calc_var_weights(movie_UI,movie_item_variances)
+save(movie_sim_var_weighted,file="../output/movie_sim_var_weighted.RData")
+
+MS_item_variances = get_item_variances(MS_UI)
+MS_sim_var_weighted = calc_var_weights(MS_UI,MS_item_variances)
+save(MS_sim_var_weighted,file="../output/MS_sim_var_weighted.RData")
+```
+
+
+## Step 3: Calculating the Predictions for the Users
+
+### Pearson
+
+```{r}
+MS_pred_pearson <- pred_matrix(MS_UI, MS_sim_pearson)
+save(MS_pred_pearson, file = "../output/MS_pred_pearson.RData")
+
+movie_pred_pearson <- pred_matrix(movie_UI, movie_sim_pearson)
+save(movie_pred_pearson, file = "../output/movie_pred_pearson.RData")
+```
+
+### Spearman
+
+```{r}
+MS_pred_spearman <- pred_matrix(MS_UI, MS_sim_spearman)
+save(MS_pred_spearman, file = "../output/MS_pred_spearman.RData")
+
+movie_pred_spearman <- pred_matrix(movie_UI, movie_sim_spearman)
+save(movie_pred_spearman, file = "../output/movie_pred_spearman.RData")
+```
+
+### Entropy
+
+```{r}
+MS_pred_entropy <- pred_matrix(MS_UI, MS_sim_entropy)
+save(MS_pred_entropy, file = "../output/MS_pred_entropy.RData")
+    
+movie_pred_entropy <- pred_matrix(movie_UI, movie_sim_entropy)
+save(movie_pred_entropy, file = "../output/movie_pred_entropy.RData")
+```
+
+### Cosine Vector
+
+```{r}
+MS_pred_vector <- pred_matrix(MS_UI, MS_sim_vector)
+save(MS_pred_vector, file = "../output/MS_pred_vector.RData")
+    
+movie_pred_vector <- pred_matrix(movie_UI, movie_sim_vector)
+save(movie_pred_vector, file = "../output/movie_pred_vector.RData")
+```
+
+### Mean Squared Difference
+
+```{r}
+MS_pred_msd <- pred_matrix(MS_UI, MS_sim_msd)
+save(MS_pred_msd, file = "../output/MS_pred_msd.RData")
+
+movie_pred_msd <- pred_matrix(movie_UI, movie_sim_msd)
+save(movie_pred_msd, file = "../output/movie_pred_msd.RData")
+```
+
+### SimRank
+
+```{r}
+MS_pred_simrank <- pred_matrix(MS_UI, MS_sim_simrank)
+save(MS_pred_simrank, file = "../output/MS_pred_simrank.RData")
+
+movie_pred_simrank <- pred_matrix(movie_UI, movie_sim_simrank)
+save(movie_pred_simrank, file = "../output/movie_pred_simrank.RData")
+```
+
+### Significance Weighting + Pearson
+
+```{r}
+MS_weighted = MS_sim_pearson * MS_sigs
+movie_weighted = movie_sim_pearson * movie_sigs
+
+MS_pred_pearson_weighted <- pred_matrix(MS_UI, MS_weighted)
+save(MS_pred_pearson_weighted, file = "../output/MS_pred_pearson_weighted.RData")
+
+movie_pred_pearson_weighted <- pred_matrix(movie_UI, movie_weighted)
+save(movie_pred_pearson_weighted, file = "../output/movie_pred_pearson_weighted.RData")
+```
+
+### Variance Weighting + Pearson
+
+```{r}
+MS_pred_var_weighted <- pred_matrix(MS_UI, MS_sim_var_weighted)
+save(MS_pred_var_weighted, file = "../output/MS_pred_var_weighted.RData")
+
+movie_pred_var_weighted <- pred_matrix(movie_UI, movie_sim_var_weighted)
+save(movie_pred_var_weighted, file = "../output/movie_pred_var_weighted.RData")
+```
+
+
+## Step 4: Compare predictions with actual ratings to heck for accuracy
+
+### Pearson
+
+```{r}
+MS_acc_pearson <- test_acc_MS(MS_pred_pearson,MS_UI_test)
+movie_acc_pearson <- test_acc_movie(movie_pred_pearson,movie_UI_test)
+
+cat("Accuracy of MS with Pearson =", MS_acc_pearson, "score \n")
+cat("Accuracy of movie with Pearson =", movie_acc_pearson, "deviations \n")
+```
+
+### Spearman
+
+```{r}
+MS_acc_spearman <- test_acc_MS(MS_pred_spearman,MS_UI_test)
+movie_acc_spearman <- test_acc_movie(movie_pred_spearman,movie_UI_test)
+
+cat("Accuracy of MS with Spearman =", MS_acc_spearman, "score \n")
+cat("Accuracy of movie with Spearman =", movie_acc_spearman, "deviations \n")
+```
+
+### Entropy
+
+```{r}
+MS_acc_entropy <- test_acc_MS(MS_pred_entropy,MS_UI_test)
+movie_acc_entropy <- test_acc_movie(movie_pred_entropy,movie_UI_test)
+
+cat("Accuracy of MS with entropy =", MS_acc_entropy, "score \n")
+cat("Accuracy of movie with entropy =", movie_acc_entropy, "deviations \n")
+```
+
+### Cosine Vector
+
+```{r}
+MS_acc_vector <- test_acc_MS(MS_pred_vector,MS_UI_test)
+movie_acc_vector <- test_acc_movie(movie_pred_vector,movie_UI_test)
+
+cat("Accuracy of MS with vector =", MS_acc_vector, "score \n")
+cat("Accuracy of movie with vector =", movie_acc_vector, "deviations \n")
+```
+
+### Mean Squared Difference
+
+```{r}
+MS_acc_msd <- test_acc_MS(MS_pred_msd,MS_UI_test)
+movie_acc_msd <- test_acc_movie(movie_pred_msd,movie_UI_test)
+
+cat("Accuracy of MS with Mean Squared Difference =", MS_acc_msd, "score \n")
+cat("Accuracy of movie with Mean Squared Difference =", movie_acc_msd, "deviations \n")
+```
+
+### SimRank
+
+```{r}
+MS_acc_simrank <- test_acc_MS(MS_pred_simrank,MS_UI_test)
+movie_acc_simrank <- test_acc_movie(movie_pred_simrank,movie_UI_test)
+
+cat("Accuracy of MS with SimRank =", MS_acc_simrank, "score \n")
+cat("Accuracy of movie with SimRank =", movie_acc_simrank, "deviations \n")
+```
+
+### Significance Weighting + Pearson
+
+```{r}
+MS_acc_pearson_weighted <- test_acc_MS(MS_pred_pearson_weighted, MS_UI_test)
+movie_acc_pearson_weighted <- test_acc_movie(movie_pred_pearson_weighted, movie_UI_test)
+```
+
+
