@@ -108,10 +108,10 @@ save(MS_sim_simrank, file = "../output/MS_sim_simrank.RData")
 ### Significance Weighting + Pearson
 
 ```{r}
-movie_sigs = get_significance(movie_UI,50)
+movie_sigs = get_significance(movie_UI,100)
 save(movie_sigs,file="../output/movie_sigs.RData")
 
-MS_sigs = get_significance(MS_UI,50)
+MS_sigs = get_significance(MS_UI,10)
 save(MS_sigs,file="../output/MS_sigs.RData")
 ```
 
@@ -193,14 +193,17 @@ save(movie_pred_simrank, file = "../output/movie_pred_simrank.RData")
 ### Significance Weighting + Pearson
 
 ```{r}
-MS_weighted = MS_sim_pearson * MS_sigs
-movie_weighted = movie_sim_pearson * movie_sigs
+MS_sim_sig_weighted = MS_sim_pearson * MS_sigs
+movie_sim_sig_weighted = movie_sim_pearson * movie_sigs
+save(MS_sim_sig_weighted,file="MS_sim_sig_weighted.RData")
+save(movie_sim_sig_weighted,file="movie_sim_sig_weighted.RData")
 
-MS_pred_pearson_weighted <- pred_matrix(MS_UI, MS_weighted)
-save(MS_pred_pearson_weighted, file = "../output/MS_pred_pearson_weighted.RData")
 
-movie_pred_pearson_weighted <- pred_matrix(movie_UI, movie_weighted)
-save(movie_pred_pearson_weighted, file = "../output/movie_pred_pearson_weighted.RData")
+MS_pred_sig_weighted <- pred_matrix(MS_UI, MS_sim_sig_weighted)
+save(MS_pred_sig_weighted, file = "MS_pred_sig_weighted.RData")
+
+movie_pred_sig_weighted <- pred_matrix(movie_UI, movie_sim_sig_weighted)
+save(movie_pred_sig_weighted, file = "movie_pred_sig_weighted.RData")
 ```
 
 ### Variance Weighting + Pearson
@@ -279,8 +282,13 @@ cat("Accuracy of movie with SimRank =", movie_acc_simrank, "deviations \n")
 ### Significance Weighting + Pearson
 
 ```{r}
-MS_acc_pearson_weighted <- test_acc_MS(MS_pred_pearson_weighted, MS_UI_test)
-movie_acc_pearson_weighted <- test_acc_movie(movie_pred_pearson_weighted, movie_UI_test)
+MS_acc_sig_weighted <- test_acc_MS(MS_pred_sig_weighted, MS_UI_test)
+movie_acc_sig_weighted <- test_acc_movie(movie_pred_sig_weighted, movie_UI_test)
 ```
 
+### Variance Weighting + Pearson
 
+```{r}
+MS_acc_var_weighted <- test_acc_MS(MS_pred_var_weighted, MS_UI_test)
+movie_acc_var_weighted <- test_acc_movie(movie_pred_var_weighted, movie_UI_test)
+```
