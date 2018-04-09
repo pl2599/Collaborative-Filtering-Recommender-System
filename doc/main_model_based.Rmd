@@ -10,11 +10,11 @@ output:
 # Load libraries
 
 ```{r}
-source("../lib/functions.R")
-source("../lib/em.R")
-source("../lib/model_based_predictions.R")
-source("../lib/functions.R")
-source("../lib/cross_validation.R")
++source("../lib/functions.R")
++source("../lib/em.R")
++source("../lib/model_based_predictions.R")
++source("../lib/functions.R")
++source("../lib/cross_validation.R")
 ```
 
 # Load and preprocess the data
