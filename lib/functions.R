@@ -2,7 +2,7 @@
 ### Memory-based Collaborative Filtering Algorithm Starter Code ###
 ###################################################################
 
-### Authors: Group 3 
+### Authors: "Alek Anichowski, Jerome Kafrouni, Pak Kin Lai, Chunzi Wang"
 ### Project 3
 ### ADS Spring 2018
 
