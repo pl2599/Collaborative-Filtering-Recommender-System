@@ -1,6 +1,6 @@
 ---
 title: "Project 3 - Main script"
-author: "Alek Anichowski, Jerome Kafrouni, Pak Kin Lai, Michael Sheng, Chunzi Wang"
+author: "Alek Anichowski, Jerome Kafrouni, Pak Kin Lai, Chunzi Wang"
 date: "March 5, 2018"
 output:
   pdf_document: default
