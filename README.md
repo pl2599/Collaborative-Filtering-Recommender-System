@@ -25,11 +25,4 @@ For this project we worked on two main types of models: memory-based models and 
 
 In output, you will also find a pdf version of the slides that we used for our presentation.
 
-#### Contribution statement
-
-+ Alek Anichowski - Implemented significance and variance weighting
-+ Jerome Kafrouni - Implemented the EM algorithm, Cross-validation to choose number of clusters, and predictions based on the parameters outputted by EM.
-+ Pak Kin Lai - Calculated and evaluated Entropy and Vector similarity weights. Provided the outline for the main rmd file. Created the evaluation functions for movie and MS.
-+ Chunzi Wang - Calculated and evaluated Pearson, Spearman, Mean Squared Difference, and SimRank similarity weights. Combined all memory-based work into a main.rmd file. Wrote this markdown and initiated the creation of presentation slides.
-
 
